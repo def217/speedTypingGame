@@ -1,4 +1,6 @@
-function highlightText(targetPhrase, wordsArea, trackedText, progress) {
+let intervalId;
+
+function highlightLetters(targetPhrase, targetPhraseWords, wordsArea, trackedText, progress) {
     let highlightedText = "";
 
     for (let i = 0; i < targetPhrase.length; i++) {
@@ -11,6 +13,10 @@ function highlightText(targetPhrase, wordsArea, trackedText, progress) {
             highlightedText += `<span class="remaining">${targetPhrase[i]}</span>`;
         }
     }
+    
+    trackedText.split(" ").forEach(line => {
+        
+    });
 
     wordsArea.innerHTML = highlightedText;
     return ((progress / targetPhrase.length) * 100)
@@ -25,89 +31,156 @@ function updateProgressBar(progress, progressBar) {
     progressBar.style.width = progress + "%";
 }
 
-// Function to format time as HH:MM:SS
-function formatTime(seconds) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
+function formatTime(elapsedTime) {
+    const hours = Math.floor(elapsedTime / (3600 * 1000));
+    const minutes = Math.floor((elapsedTime % (3600 * 1000)) / (60 * 1000));
+    const seconds = Math.floor((elapsedTime % (60 * 1000)) / 1000);
+    const milliseconds = elapsedTime % 1000;
 
     return (
         String(hours).padStart(2, '0') +
         ':' +
         String(minutes).padStart(2, '0') +
         ':' +
-        String(remainingSeconds).padStart(2, '0')
+        String(seconds).padStart(2, '0') +
+        '.' +
+        String(milliseconds).padStart(3, '0')
     );
 }
 
-// Function to start the chronometer
 function startChronometer() {
-    let intervalId;
-    let elapsedSeconds = 0;
-    // Clear any existing interval to avoid multiple timers
+    let startTime;
     clearInterval(intervalId);
+    startTime = Date.now();
 
-    // Reset the timer
-    elapsedSeconds = 0;
-    document.querySelector('#timer-display').textContent = formatTime(elapsedSeconds);
-
-    // Start updating the timer every second
     intervalId = setInterval(() => {
-        elapsedSeconds++;
-        document.querySelector('#timer-display').textContent = formatTime(elapsedSeconds);
-    }, 1000);
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - startTime;
+        document.querySelector('#timer-display').textContent = formatTime(elapsedTime);
+    }, 10);
+}
+
+function stopChronometer() {
+    clearInterval(intervalId);
+}
+
+function saveResult(targetPhrase, storedLines, userName) {
+    let completionTime = {
+        userName: userName,
+        completionTime: document.querySelector('#timer-display').textContent,
+        date: Date.now()
+    }
+    targetPhrase.completionTimes.push(completionTime);
+    storedLines.forEach(line => {
+        if (line.id == targetPhrase.id) {
+            line.line = targetPhrase.line;
+            line.tries = targetPhrase.tries;
+        }
+    });
+
+    localStorage.setItem("textLines", JSON.stringify(storedLines));
+}
+
+function getRandomInt() {
+    return Math.floor(Math.random() * 14);
+}
+
+function setStatisctics(statistics, storedLines) {
+    let tries;
+    let accuracy;
+
+    storedLines.forEach(line => {
+        tries += line.tries;
+        accuracy += line.accuracy;
+    });
 }
 
 
-document.querySelector('#start-test-btn').addEventListener('click', function () {
-    this.disabled = true;
-    let progress = 0;
-    let trackedText = "";
-    const storedLines = JSON.parse(localStorage.getItem("textLines"));
-    const targetPhrase = storedLines[0];
-
-    const wordsArea = document.querySelector('#given-words-area');
-    wordsArea.textContent = targetPhrase;
-
-    const statusText = document.querySelector('#status-text');
-
-    const progressBar = document.querySelector('#progress-bar');
-
-    startChronometer()
-
-    function handleKeydown(event) {
-        if (event.key.length === 1) {
-            trackedText += event.key;
-        } else if (event.key === "Backspace") {
-            trackedText = trackedText.slice(0, -1);
-        }
-
-        updateProgressBar(highlightText(targetPhrase, wordsArea, trackedText, progress), progressBar);
-
-        if (trackedText === targetPhrase) {
-            statusText.textContent = "You typed the correct phrase!";
-            statusText.style.color = "green";
-            document.removeEventListener("keydown", handleKeydown);
-        } else {
-            statusText.textContent = "Keep typing...";
-            statusText.style.color = "red";
-        }
+function calculateWPM(correctWords, startTime) {
+    const elapsedTime = (Date.now() - startTime) / 1000;
+    const minutesElapsed = elapsedTime / 60;
+    if (minutesElapsed > 0) {
+        return Math.floor(correctWords / minutesElapsed);
     }
+    return 0;
+}
 
-    document.addEventListener("keydown", handleKeydown);
-});
+document.addEventListener('DOMContentLoaded', function () {
+    const storedLines = JSON.parse(localStorage.getItem("textLines")) || [];
+    document.querySelector('#start-test-btn').addEventListener('click', function () {
+        this.disabled = true;
+        let progress = 0;
+        let trackedText = "";
+        let correctWords = 0;
+        const targetPhrase = storedLines[getRandomInt()];
+        const targetPhraseWords = targetPhrase.line.split(" ");
+        targetPhrase.tries++;
+        let startTime = Date.now(); // Start the timer
+        const wordsArea = document.querySelector('#given-words-area');
+        wordsArea.textContent = targetPhrase.line;
+        const statusText = document.querySelector('#status-text');
+        const wpmText = document.querySelector('#wpm-text');
+        const progressBar = document.querySelector('#progress-bar');
+        startChronometer(); // Start the chronometer
 
-document.querySelector('#fetch-new-words-btn').addEventListener('click', async function () {
-    const url = "https://poetrydb.org/title/Ozymandias/lines.json";
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Response status: ${response.status}`);
+        function handleKeydown(event) {
+            if (event.key.length === 1) {
+                trackedText += event.key;
+            } else if (event.key === "Backspace") {
+                trackedText = trackedText.slice(0, -1);
+            }
+
+            updateProgressBar(highlightLetters(targetPhrase.line, targetPhraseWords, wordsArea, trackedText, progress), progressBar);
+
+            // Count the number of correct words typed so far
+            const trackedWords = trackedText.split(" ");
+            correctWords = trackedWords.reduce((count, word, index) => {
+                if (word === targetPhraseWords[index]) {
+                    return count + 1;
+                }
+                return count;
+            }, 0);
+
+            const wpm = calculateWPM(correctWords, startTime);
+            wpmText.textContent = `WPM: ${wpm}`;
+
+            if (trackedText === targetPhrase.line) {
+                statusText.textContent = "You typed the correct phrase!";
+                statusText.style.color = "green";
+                stopChronometer();
+                saveResult(targetPhrase, storedLines, "Jonas");
+                document.removeEventListener("keydown", handleKeydown);
+            } else {
+                statusText.textContent = "Keep typing...";
+                statusText.style.color = "red";
+            }
         }
 
-        const data = await response.json();
-        localStorage.setItem("textLines", JSON.stringify(data[0].lines));
-    } catch (error) {
-        console.error(error.message);
-    }
+        document.addEventListener("keydown", handleKeydown);
+    });
+
+    document.querySelector('#fetch-new-words-btn').addEventListener('click', async function () {
+        const url = "https://poetrydb.org/title/Ozymandias/lines.json";
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            const linesWithInfo = data[0].lines.map((line, index) => {
+                return {
+                    id: index + 1,
+                    line: line,
+                    tries: 0,
+                    completionTimes: []
+                };
+            });
+
+            localStorage.setItem("textLines", JSON.stringify(linesWithInfo));
+        } catch (error) {
+            console.error(error.message);
+        }
+    });
 });
