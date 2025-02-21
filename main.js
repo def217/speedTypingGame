@@ -13,9 +13,9 @@ function highlightLetters(targetPhrase, targetPhraseWords, wordsArea, trackedTex
             highlightedText += `<span class="remaining">${targetPhrase[i]}</span>`;
         }
     }
-    
+
     trackedText.split(" ").forEach(line => {
-        
+
     });
 
     wordsArea.innerHTML = highlightedText;
@@ -85,16 +85,34 @@ function getRandomInt() {
     return Math.floor(Math.random() * 14);
 }
 
-function setStatisctics(statistics, storedLines) {
-    let tries;
-    let accuracy;
+function setStatisctics(targetPhrase) {
+    let index = 1;
+    let tr = '';
+    const scoreboard = document.querySelector('#scoreboard');
 
-    storedLines.forEach(line => {
-        tries += line.tries;
-        accuracy += line.accuracy;
+    const scoreboardBody = document.querySelector('#scoreboard-body');
+
+    targetPhrase.completionTimes.forEach(time => {
+        tr = document.createElement("tr");
+        const th = document.createElement("th");
+        const date = document.createElement("td");
+        const completionTime = document.createElement("td");
+        const name = document.createElement("td");
+        th.scope = 'row';
+        th.id = `scoreboard-row-${index}`;
+        th.innerText = index;
+
+        const now = new Date(time.date);
+        const nowUtc = now.toUTCString().slice(0, -4);
+        date.innerText = nowUtc.toString();
+        completionTime.innerText = time.completionTime;
+        name.innerText = time.userName;
+
+        index++;
+        tr.append(th, date, completionTime, name);
+        scoreboardBody.appendChild(tr);
     });
 }
-
 
 function calculateWPM(correctWords, startTime) {
     const elapsedTime = (Date.now() - startTime) / 1000;
@@ -115,13 +133,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const targetPhrase = storedLines[getRandomInt()];
         const targetPhraseWords = targetPhrase.line.split(" ");
         targetPhrase.tries++;
-        let startTime = Date.now(); // Start the timer
+        let startTime = Date.now();
         const wordsArea = document.querySelector('#given-words-area');
         wordsArea.textContent = targetPhrase.line;
         const statusText = document.querySelector('#status-text');
         const wpmText = document.querySelector('#wpm-text');
         const progressBar = document.querySelector('#progress-bar');
-        startChronometer(); // Start the chronometer
+        startChronometer();
 
         function handleKeydown(event) {
             if (event.key.length === 1) {
@@ -132,7 +150,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             updateProgressBar(highlightLetters(targetPhrase.line, targetPhraseWords, wordsArea, trackedText, progress), progressBar);
 
-            // Count the number of correct words typed so far
             const trackedWords = trackedText.split(" ");
             correctWords = trackedWords.reduce((count, word, index) => {
                 if (word === targetPhraseWords[index]) {
@@ -149,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusText.style.color = "green";
                 stopChronometer();
                 saveResult(targetPhrase, storedLines, "Jonas");
+                setStatisctics(targetPhrase);
                 document.removeEventListener("keydown", handleKeydown);
             } else {
                 statusText.textContent = "Keep typing...";

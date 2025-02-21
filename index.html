@@ -51,8 +51,8 @@
                 <div class="card-body text-start">
                     You finished in 10 seconds.
                 </div>
-                <div id="progress-bar" class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="0" aria-valuemin="0"
-                    aria-valuemax="100">
+                <div id="progress-bar" class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="0"
+                    aria-valuemin="0" aria-valuemax="100">
                     <div class="progress-bar" style="width: 0%"></div>
                 </div>
                 <div class="card p-2 gap-3">
@@ -65,13 +65,26 @@
                         <div id="timer-display" class="col">
                         </div>
                     </div>
-                    
+
                     <div class="card p-2">
                         <span id="given-words-area" class="card-body text-start">
                         </span>
                     </div>
                     <div class="card p-2">
                         <span id="user-words-area" class="card-body text-start">
+                            <h5 class="text-center">Scoreboard for this phrase:</h5>
+                            <table id="scoreboard" class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Date</th>
+                                        <th scope="col">Time</th>
+                                        <th scope="col">Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scoreboard-body">
+                                </tbody>
+                            </table>
                         </span>
                     </div>
                 </div>
