@@ -1,4 +1,3 @@
-
 .correct {
     color: green;
     font-weight: bold;
@@ -12,5 +11,8 @@
 .remaining {
     color: gray;
     font-style: italic;
-  }
-  
+}
+
+#progress-bar {
+    transition: width 0.5s ease-in-out;
+}
