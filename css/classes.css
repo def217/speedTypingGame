@@ -1,3 +1,16 @@
+html, body {
+    height: 100%;
+    overflow-x: hidden;
+}
+
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 .correct {
     color: green;
     font-weight: bold;
